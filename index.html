@@ -34,8 +34,12 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
 <!-- Áudio ping público -->
 <audio id="pingAudio" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
 
+<!-- LEAFLET -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+
 <script>
 // ======================== TRADUÇÕES ========================
 const translations = {
@@ -72,7 +76,7 @@ updateTime(); setInterval(updateTime,1000);
 // ======================== SUPABASE ========================
 const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const pingAudio = document.getElementById("pingAudio");
 
 // ======================== VARIÁVEIS ========================
