@@ -36,178 +36,177 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<!-- Supabase JS, carregado antes do nosso código -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js" id="supabase-script"></script>
 
-<!-- Nosso código -->
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
+  // Espera a biblioteca Supabase carregar antes de usar
+  document.getElementById("supabase-script").onload = () => {
 
-  // ======================== SUPABASE ========================
-  const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // Supabase carregado corretamente
+    // ======================== SUPABASE ========================
+    const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Audio ping
-  const pingAudio = document.getElementById("pingAudio");
+    const pingAudio = document.getElementById("pingAudio");
 
-  // ======================== TRADUÇÕES AUTOMÁTICAS ========================
-  const translations = {
-    pt: { placeholder:"Deixe um pulso no mundo...", register:"Registrar", expires:"Expira em 24h" },
-    en: { placeholder:"Leave a pulse in the world...", register:"Register", expires:"Expires in 24h" },
-    es: { placeholder:"Deja un pulso en el mundo...", register:"Registrar", expires:"Expira en 24h" }
-  };
-  let lang = navigator.language.startsWith("en") ? "en" :
-             navigator.language.startsWith("es") ? "es" : "pt";
-  document.getElementById("input").placeholder = translations[lang].placeholder;
-  document.getElementById("registerBtn").textContent = translations[lang].register;
+    // ======================== TRADUÇÕES AUTOMÁTICAS ========================
+    const translations = {
+      pt: { placeholder:"Deixe um pulso no mundo...", register:"Registrar", expires:"Expira em 24h" },
+      en: { placeholder:"Leave a pulse in the world...", register:"Register", expires:"Expires in 24h" },
+      es: { placeholder:"Deja un pulso en el mundo...", register:"Registrar", expires:"Expira en 24h" }
+    };
+    let lang = navigator.language.startsWith("en") ? "en" :
+               navigator.language.startsWith("es") ? "es" : "pt";
+    document.getElementById("input").placeholder = translations[lang].placeholder;
+    document.getElementById("registerBtn").textContent = translations[lang].register;
 
-  // ======================== MAPA ========================
-  const map = L.map('map').setView([20,0],2);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'&copy; OpenStreetMap contributors',
-    maxZoom:19
-  }).addTo(map);
-
-  // ======================== RELÓGIO ========================
-  const timeEl = document.getElementById("time");
-  function updateTime(){ 
-    const d=new Date(); 
-    timeEl.textContent = String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0'); 
-  }
-  updateTime(); setInterval(updateTime,1000);
-
-  // ======================== VARIÁVEIS ========================
-  const cardsEl = document.getElementById("cards");
-  const maxCards = 7;
-  let markers = [];
-  let particleLines = [];
-  let currentMessages = [];
-
-  // Cor do pulso baseada na hora
-  function getPulseColor(){
-    const h = new Date().getHours();
-    if(h<5) return "#4d79ff";
-    if(h<12) return "#ffd966";
-    if(h<18) return "#ff9900";
-    return "#9933ff";
-  }
-
-  // ======================== CRIAR PULSO ========================
-  function createPulse(lat,lng,text,date){
-    const color = getPulseColor();
-    const marker = L.circleMarker([lat,lng],{
-      radius:10, fillColor:color, fillOpacity:0.8, stroke:true, color:"#fff", weight:1, text:text, inserted_at:date
+    // ======================== MAPA ========================
+    const map = L.map('map').setView([20,0],2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'&copy; OpenStreetMap contributors',
+      maxZoom:19
     }).addTo(map);
-    marker.bindPopup(`<strong>${text}</strong><br>${new Date(date).toLocaleString()}<br>${translations[lang].expires}`);
 
-    // Animação pulsante
-    let r=10;
-    const pulse = setInterval(()=>{
-      r+=0.5;
-      marker.setRadius(r);
-      marker.setStyle({fillOpacity:Math.max(0,0.8-(r-10)/20)});
-      if(r>=30) r=10;
-    },50);
+    // ======================== RELÓGIO ========================
+    const timeEl = document.getElementById("time");
+    function updateTime(){ 
+      const d=new Date(); 
+      timeEl.textContent = String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0'); 
+    }
+    updateTime(); setInterval(updateTime,1000);
 
-    return marker;
-  }
+    // ======================== VARIÁVEIS ========================
+    const cardsEl = document.getElementById("cards");
+    const maxCards = 7;
+    let markers = [];
+    let particleLines = [];
+    let currentMessages = [];
 
-  // ======================== CARDS ========================
-  function renderCards(messages){
-    cardsEl.innerHTML="";
-    messages.slice(0,maxCards).forEach(m=>{
-      const div = document.createElement("div");
-      div.className="card";
-      const date = new Date(m.inserted_at);
-      div.innerHTML=`<strong>${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}</strong> - "${m.text}"`;
-      div.onclick = ()=>{ if(m.marker) m.marker.openPopup(); }
-      cardsEl.appendChild(div);
-    });
-  }
+    // Cor do pulso baseada na hora
+    function getPulseColor(){
+      const h = new Date().getHours();
+      if(h<5) return "#4d79ff";
+      if(h<12) return "#ffd966";
+      if(h<18) return "#ff9900";
+      return "#9933ff";
+    }
 
-  // ======================== PARTICULAS ENTRE PULSOS ========================
-  function clearParticles(){ particleLines.forEach(line=>map.removeLayer(line)); particleLines=[]; }
-  function drawParticles(){
-    clearParticles();
-    for(let i=0;i<markers.length;i++){
-      for(let j=i+1;j<markers.length;j++){
-        const m1 = markers[i].getLatLng();
-        const m2 = markers[j].getLatLng();
-        if(map.distance(m1,m2)<100000){
-          const line = L.polyline([m1,m2],{color:'rgba(255,255,255,0.2)', weight:1}).addTo(map);
-          particleLines.push(line);
+    // ======================== CRIAR PULSO ========================
+    function createPulse(lat,lng,text,date){
+      const color = getPulseColor();
+      const marker = L.circleMarker([lat,lng],{
+        radius:10, fillColor:color, fillOpacity:0.8, stroke:true, color:"#fff", weight:1, text:text, inserted_at:date
+      }).addTo(map);
+      marker.bindPopup(`<strong>${text}</strong><br>${new Date(date).toLocaleString()}<br>${translations[lang].expires}`);
+
+      // Animação pulsante
+      let r=10;
+      const pulse = setInterval(()=>{
+        r+=0.5;
+        marker.setRadius(r);
+        marker.setStyle({fillOpacity:Math.max(0,0.8-(r-10)/20)});
+        if(r>=30) r=10;
+      },50);
+
+      return marker;
+    }
+
+    // ======================== CARDS ========================
+    function renderCards(messages){
+      cardsEl.innerHTML="";
+      messages.slice(0,maxCards).forEach(m=>{
+        const div = document.createElement("div");
+        div.className="card";
+        const date = new Date(m.inserted_at);
+        div.innerHTML=`<strong>${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}</strong> - "${m.text}"`;
+        div.onclick = ()=>{ if(m.marker) m.marker.openPopup(); }
+        cardsEl.appendChild(div);
+      });
+    }
+
+    // ======================== PARTICULAS ENTRE PULSOS ========================
+    function clearParticles(){ particleLines.forEach(line=>map.removeLayer(line)); particleLines=[]; }
+    function drawParticles(){
+      clearParticles();
+      for(let i=0;i<markers.length;i++){
+        for(let j=i+1;j<markers.length;j++){
+          const m1 = markers[i].getLatLng();
+          const m2 = markers[j].getLatLng();
+          if(map.distance(m1,m2)<100000){
+            const line = L.polyline([m1,m2],{color:'rgba(255,255,255,0.2)', weight:1}).addTo(map);
+            particleLines.push(line);
+          }
         }
       }
     }
-  }
 
-  // ======================== ENVIAR MENSAGEM ========================
-  async function sendMessage(){
-    if(!navigator.geolocation) return alert("GPS não disponível");
-    const text = document.getElementById("input").value.trim();
-    if(!text) return;
-    document.getElementById("input").value="";
-    pingAudio.currentTime=0; pingAudio.play();
+    // ======================== ENVIAR MENSAGEM ========================
+    async function sendMessage(){
+      if(!navigator.geolocation) return alert("GPS não disponível");
+      const text = document.getElementById("input").value.trim();
+      if(!text) return;
+      document.getElementById("input").value="";
+      pingAudio.currentTime=0; pingAudio.play();
 
-    navigator.geolocation.getCurrentPosition(async pos=>{
-      const lat = pos.coords.latitude + (Math.random()-0.5)*0.02;
-      const lng = pos.coords.longitude + (Math.random()-0.5)*0.02;
-      const {data,error} = await supabaseClient.from('messages').insert([{text,latitude:lat,longitude:lng}]);
-      if(error) console.error(error);
-    });
-  }
-  document.getElementById("registerBtn").addEventListener("click", sendMessage);
+      navigator.geolocation.getCurrentPosition(async pos=>{
+        const lat = pos.coords.latitude + (Math.random()-0.5)*0.02;
+        const lng = pos.coords.longitude + (Math.random()-0.5)*0.02;
+        const {data,error} = await supabaseClient.from('messages').insert([{text,latitude:lat,longitude:lng}]);
+        if(error) console.error(error);
+      });
+    }
+    document.getElementById("registerBtn").addEventListener("click", sendMessage);
 
-  // ======================== BUSCAR MENSAGENS ========================
-  async function fetchMessages(){
-    const {data,error} = await supabaseClient.from('messages').select('*').order('inserted_at',{ascending:false}).limit(100);
-    if(error) return console.error(error);
-    const now = Date.now();
-    currentMessages=[];
-    data.forEach(m=>{
-      if(now - new Date(m.inserted_at).getTime() <= 24*60*60*1000){
+    // ======================== BUSCAR MENSAGENS ========================
+    async function fetchMessages(){
+      const {data,error} = await supabaseClient.from('messages').select('*').order('inserted_at',{ascending:false}).limit(100);
+      if(error) return console.error(error);
+      const now = Date.now();
+      currentMessages=[];
+      data.forEach(m=>{
+        if(now - new Date(m.inserted_at).getTime() <= 24*60*60*1000){
+          const marker = createPulse(m.latitude,m.longitude,m.text,m.inserted_at);
+          m.marker = marker;
+          currentMessages.push(m);
+          markers.push(marker);
+        }
+      });
+      drawParticles();
+      renderCards(currentMessages);
+    }
+    fetchMessages();
+
+    // ======================== REALTIME ========================
+    supabaseClient.channel('public:messages')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, payload=>{
+      const m = payload.new;
+      if(Date.now() - new Date(m.inserted_at).getTime() <= 24*60*60*1000){
         const marker = createPulse(m.latitude,m.longitude,m.text,m.inserted_at);
         m.marker = marker;
-        currentMessages.push(m);
         markers.push(marker);
+        currentMessages.unshift(m);
+        renderCards(currentMessages);
+        drawParticles();
       }
-    });
-    drawParticles();
-    renderCards(currentMessages);
-  }
-  fetchMessages();
+    }).subscribe();
 
-  // ======================== REALTIME ========================
-  supabaseClient.channel('public:messages')
-  .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, payload=>{
-    const m = payload.new;
-    if(Date.now() - new Date(m.inserted_at).getTime() <= 24*60*60*1000){
-      const marker = createPulse(m.latitude,m.longitude,m.text,m.inserted_at);
-      m.marker = marker;
-      markers.push(marker);
-      currentMessages.unshift(m);
-      renderCards(currentMessages);
+    // ======================== LIMPAR PULSOS EXPIRADOS ========================
+    setInterval(()=>{
+      const now = Date.now();
+      markers = markers.filter(marker=>{
+        const popupText = marker.getPopup()?.getContent();
+        if(!popupText) return true;
+        const match = popupText.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z)/);
+        if(!match) return true;
+        const inserted = new Date(match[1]).getTime();
+        if(now - inserted > 24*60*60*1000){ map.removeLayer(marker); return false; }
+        return true;
+      });
       drawParticles();
-    }
-  }).subscribe();
+    },60*1000);
 
-  // ======================== LIMPAR PULSOS EXPIRADOS ========================
-  setInterval(()=>{
-    const now = Date.now();
-    markers = markers.filter(marker=>{
-      const popupText = marker.getPopup()?.getContent();
-      if(!popupText) return true;
-      const match = popupText.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z)/);
-      if(!match) return true;
-      const inserted = new Date(match[1]).getTime();
-      if(now - inserted > 24*60*60*1000){ map.removeLayer(marker); return false; }
-      return true;
-    });
-    drawParticles();
-  },60*1000);
-
-}); // fim DOMContentLoaded
+  }; // fim onload supabase
 </script>
 </body>
 </html>
