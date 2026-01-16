@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>1440 Sensorial Global</title>
+<meta name="description" content="Envie pulsos anônimos pelo mundo e veja mensagens em tempo real em um mapa interativo.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
 html, body { height:100%; margin:0; padding:0; font-family:Georgia, serif; background:#0f1115; color:#fff; }
@@ -38,9 +39,9 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
 <!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 
-<!-- TODO: colocar o código dentro do DOMContentLoaded para garantir que o Supabase carregou -->
+<!-- SEU SCRIPT, DEPOIS DAS BIBLIOTECAS -->
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
+(async function(){
 
   // ======================== SUPABASE ========================
   const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
@@ -197,7 +198,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     drawParticles();
   },60*1000);
 
-});
+})();
 </script>
 </body>
 </html>
