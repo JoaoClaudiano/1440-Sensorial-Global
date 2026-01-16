@@ -2,19 +2,34 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>1440 Sensorial Global</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1440 Sensorial Global - Pulsos do Mundo</title>
+<meta name="description" content="1440 Sensorial: envie pulsos anônimos pelo mundo e veja mensagens em tempo real em um mapa interativo. Experiência sensorial e colaborativa.">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="1440 Sensorial Global"/>
+<meta property="og:description" content="Envie pulsos anônimos pelo mundo e veja mensagens em tempo real em um mapa interativo."/>
+<meta property="og:type" content="website"/>
+<meta property="og:url" content="https://seu-site.com/"/>
+<meta property="og:image" content="https://seu-site.com/preview.png"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
-body{margin:0;font-family:Georgia,sans-serif;display:flex;flex-direction:column;height:100vh;background:#0f1115;color:#eaeaea;}
-#map{flex:1;filter:grayscale(100%) brightness(0.85);}
-.panel{padding:15px;background:rgba(15,17,21,0.8);}
-.time{text-align:center;font-size:2rem;margin-bottom:10px;}
-textarea{width:100%;background:transparent;border:1px solid #555;color:#eaeaea;padding:10px;resize:none;}
-button{margin-top:10px;padding:8px 18px;background:none;border:1px solid #777;color:#eaeaea;cursor:pointer;}
-.cards{margin-top:10px;display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto;}
-.card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);padding:8px;font-size:0.9rem;animation:fadeIn 0.5s;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+body {
+  margin:0;
+  font-family: Georgia, sans-serif;
+  background:#0f1115;
+  color:#eaeaea;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
+#map { height:70vh; width:100%; filter: grayscale(100%) brightness(0.85); }
+.panel { height:30vh; padding:15px; background:rgba(15,17,21,0.85); display:flex; flex-direction:column; }
+.time { text-align:center; font-size:2rem; margin-bottom:10px; }
+textarea { width:100%; background:transparent; border:1px solid #555; color:#eaeaea; padding:10px; resize:none; }
+button { margin-top:10px; padding:8px 18px; background:none; border:1px solid #777; color:#eaeaea; cursor:pointer; }
+.cards { margin-top:10px; display:flex; flex-direction:column; gap:5px; max-height:100%; overflow-y:auto; }
+.card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:8px; font-size:0.9rem; animation:fadeIn 0.5s; }
+@keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
 </style>
 </head>
 <body>
@@ -37,66 +52,67 @@ const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
 const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ==========================================================
 
-const map = L.map('map',{zoomControl:false}).setView([20,0],2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:''}).addTo(map);
+// Inicializa mapa
+const map = L.map('map',{zoomControl:true}).setView([20,0],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
 
-const timeEl=document.getElementById("time");
-const cardsEl=document.getElementById("cards");
-const maxCards = 7; // limite de cards visíveis
+const timeEl = document.getElementById("time");
+const cardsEl = document.getElementById("cards");
+const maxCards = 7;
 
-// Atualiza hora no painel
+// Atualiza hora
 function updateTime(){
-  const d=new Date();
-  timeEl.textContent=
-    String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0');
+  const d = new Date();
+  timeEl.textContent = String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0');
 }
 setInterval(updateTime,1000); updateTime();
 
-// Define cor do pulso pelo horário
+// Cor do pulso por horário
 function getPulseColor(){
-  const hour=new Date().getHours();
-  if(hour>=0 && hour<5) return "#4d79ff";   // noite
-  if(hour>=5 && hour<12) return "#ffd966";  // manhã
-  if(hour>=12 && hour<18) return "#ff9900"; // tarde
-  return "#9933ff";                         // noite
+  const h = new Date().getHours();
+  if(h>=0 && h<5) return "#4d79ff";
+  if(h>=5 && h<12) return "#ffd966";
+  if(h>=12 && h<18) return "#ff9900";
+  return "#9933ff";
 }
 
-// Cria pulso animado no mapa
+// Cria pulso animado
 function createPulse(lat,lng){
   const color = getPulseColor();
-  const center = L.circleMarker([lat,lng],{
-    radius:14,fillColor:color,fillOpacity:0.9,stroke:true,color:"#fff",weight:1
-  }).addTo(map);
-
+  L.circleMarker([lat,lng],{radius:14, fillColor:color, fillOpacity:0.9, stroke:true, color:"#fff", weight:1}).addTo(map);
   let r=50;
   const wave=L.circle([lat,lng],{radius:r,color:color,opacity:0.6,fill:false}).addTo(map);
-
   const anim=setInterval(()=>{
     r+=200;
     wave.setRadius(r);
     wave.setStyle({opacity:Math.max(0,wave.options.opacity-0.01)});
-    if(wave.options.opacity<=0){
-      map.removeLayer(wave);
-      clearInterval(anim);
-    }
+    if(wave.options.opacity<=0){ map.removeLayer(wave); clearInterval(anim); }
   },50);
 }
 
-// Envia mensagem para o Supabase
+// Renderiza cards
+function renderCards(messages){
+  cardsEl.innerHTML="";
+  messages.slice(0,maxCards).forEach(m=>{
+    const div=document.createElement("div");
+    div.className="card";
+    const date=new Date(m.inserted_at);
+    div.innerHTML=`<strong>${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}</strong><br>"${m.text}"`;
+    cardsEl.appendChild(div);
+  });
+}
+
+// Envia mensagem
 async function sendMessage(){
   if(!navigator.geolocation) return alert("GPS não disponível");
-  const text = document.getElementById("input").value.trim();
+  const text=document.getElementById("input").value.trim();
   if(!text) return;
 
   navigator.geolocation.getCurrentPosition(async pos=>{
-    const lat=pos.coords.latitude+(Math.random()-0.5)*0.02;
-    const lng=pos.coords.longitude+(Math.random()-0.5)*0.02;
+    const lat=pos.coords.latitude + (Math.random()-0.5)*0.02;
+    const lng=pos.coords.longitude + (Math.random()-0.5)*0.02;
 
-    // salva no Supabase
-    const {data,error} = await supabase
-      .from('messages')
-      .insert([{text,latitude:lat,longitude:lng}]);
-
+    const {data,error}=await supabase.from('messages').insert([{text,latitude:lat,longitude:lng}]);
     if(error) return console.error(error);
 
     document.getElementById("input").value="";
@@ -104,46 +120,25 @@ async function sendMessage(){
   });
 }
 
-// Renderiza cards do feed
-function renderCards(messages){
-  cardsEl.innerHTML="";
-  messages.slice(0,maxCards).forEach(m=>{
-    const div=document.createElement("div");
-    div.className="card";
-    const date = new Date(m.inserted_at);
-    div.innerHTML=`<strong>${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}</strong><br>"${m.text}"`;
-    cardsEl.appendChild(div);
-  });
-}
-
 // Busca mensagens recentes
 async function fetchMessages(){
-  const {data,error} = await supabase
-    .from('messages')
-    .select('*')
-    .order('inserted_at',{ascending:false})
-    .limit(50);
+  const {data,error}=await supabase.from('messages').select('*').order('inserted_at',{ascending:false}).limit(50);
   if(error) return console.error(error);
 
   renderCards(data);
-  data.forEach(m=>{
-    createPulse(m.latitude,m.longitude);
-  });
+  data.forEach(m=>createPulse(m.latitude,m.longitude));
 }
 
-// Realtime subscription para receber mensagens em tempo real
-supabase
-  .channel('public:messages')
-  .on('postgres_changes', {event:'INSERT', schema:'public', table:'messages'}, payload=>{
-    const m = payload.new;
-    renderCards([m,...Array.from(cardsEl.children).map(c=>{
-      return {text:c.innerText, inserted_at:new Date().toISOString()};
-    })].slice(0,maxCards));
-    createPulse(m.latitude,m.longitude);
-  })
-  .subscribe();
+// Realtime subscription
+supabase.channel('public:messages')
+.on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, payload=>{
+  const m=payload.new;
+  renderCards([m,...Array.from(cardsEl.children).map(c=>({text:c.innerText,inserted_at:new Date().toISOString()}))].slice(0,maxCards));
+  createPulse(m.latitude,m.longitude);
+})
+.subscribe();
 
-// fetch inicial
+// Fetch inicial
 fetchMessages();
 </script>
 
