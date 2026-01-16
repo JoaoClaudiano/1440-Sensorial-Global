@@ -33,32 +33,32 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
 
 <audio id="pingAudio" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
 
-<!-- LEAFLET -->
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<!-- SUPABASE -->
+<!-- Supabase JS, carregado antes do nosso código -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 
-<!-- SEU SCRIPT, DEPOIS DAS BIBLIOTECAS -->
+<!-- Nosso código -->
 <script>
-(async function(){
+document.addEventListener('DOMContentLoaded', async () => {
 
   // ======================== SUPABASE ========================
   const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // Supabase carregado corretamente
+
+  // Audio ping
   const pingAudio = document.getElementById("pingAudio");
 
-  // ======================== TRADUÇÕES ========================
+  // ======================== TRADUÇÕES AUTOMÁTICAS ========================
   const translations = {
     pt: { placeholder:"Deixe um pulso no mundo...", register:"Registrar", expires:"Expira em 24h" },
     en: { placeholder:"Leave a pulse in the world...", register:"Register", expires:"Expires in 24h" },
     es: { placeholder:"Deja un pulso en el mundo...", register:"Registrar", expires:"Expira en 24h" }
   };
-
   let lang = navigator.language.startsWith("en") ? "en" :
              navigator.language.startsWith("es") ? "es" : "pt";
-
   document.getElementById("input").placeholder = translations[lang].placeholder;
   document.getElementById("registerBtn").textContent = translations[lang].register;
 
@@ -84,6 +84,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
   let particleLines = [];
   let currentMessages = [];
 
+  // Cor do pulso baseada na hora
   function getPulseColor(){
     const h = new Date().getHours();
     if(h<5) return "#4d79ff";
@@ -92,6 +93,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
     return "#9933ff";
   }
 
+  // ======================== CRIAR PULSO ========================
   function createPulse(lat,lng,text,date){
     const color = getPulseColor();
     const marker = L.circleMarker([lat,lng],{
@@ -99,6 +101,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
     }).addTo(map);
     marker.bindPopup(`<strong>${text}</strong><br>${new Date(date).toLocaleString()}<br>${translations[lang].expires}`);
 
+    // Animação pulsante
     let r=10;
     const pulse = setInterval(()=>{
       r+=0.5;
@@ -110,6 +113,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
     return marker;
   }
 
+  // ======================== CARDS ========================
   function renderCards(messages){
     cardsEl.innerHTML="";
     messages.slice(0,maxCards).forEach(m=>{
@@ -122,6 +126,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
     });
   }
 
+  // ======================== PARTICULAS ENTRE PULSOS ========================
   function clearParticles(){ particleLines.forEach(line=>map.removeLayer(line)); particleLines=[]; }
   function drawParticles(){
     clearParticles();
@@ -137,6 +142,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
     }
   }
 
+  // ======================== ENVIAR MENSAGEM ========================
   async function sendMessage(){
     if(!navigator.geolocation) return alert("GPS não disponível");
     const text = document.getElementById("input").value.trim();
@@ -153,6 +159,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
   }
   document.getElementById("registerBtn").addEventListener("click", sendMessage);
 
+  // ======================== BUSCAR MENSAGENS ========================
   async function fetchMessages(){
     const {data,error} = await supabaseClient.from('messages').select('*').order('inserted_at',{ascending:false}).limit(100);
     if(error) return console.error(error);
@@ -171,6 +178,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
   }
   fetchMessages();
 
+  // ======================== REALTIME ========================
   supabaseClient.channel('public:messages')
   .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, payload=>{
     const m = payload.new;
@@ -184,6 +192,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
     }
   }).subscribe();
 
+  // ======================== LIMPAR PULSOS EXPIRADOS ========================
   setInterval(()=>{
     const now = Date.now();
     markers = markers.filter(marker=>{
@@ -198,7 +207,7 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
     drawParticles();
   },60*1000);
 
-})();
+}); // fim DOMContentLoaded
 </script>
 </body>
 </html>
