@@ -13,7 +13,7 @@ body { display:flex; flex-direction:column; }
 .panel { height:30vh; min-height:120px; padding:10px; background:rgba(15,17,21,0.85); display:flex; flex-direction:column; }
 .time { text-align:center; font-size:2rem; margin-bottom:5px; }
 textarea { width:100%; background:transparent; border:1px solid #555; color:#eaeaea; padding:8px; resize:none; font-family:Georgia, serif; }
-button, select { margin-top:5px; padding:6px 12px; background:none; border:1px solid #777; color:#eaeaea; cursor:pointer; font-family:Georgia, serif; }
+button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #777; color:#eaeaea; cursor:pointer; font-family:Georgia, serif; }
 .cards { margin-top:5px; display:flex; flex-direction:column; gap:3px; max-height:100%; overflow-y:auto; }
 .card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:5px; font-size:0.85rem; cursor:pointer; transition:0.2s; }
 .card:hover { background:rgba(255,255,255,0.15); }
@@ -28,12 +28,6 @@ button, select { margin-top:5px; padding:6px 12px; background:none; border:1px s
   <div class="time" id="time">--:--</div>
   <textarea id="input"></textarea>
   <button id="registerBtn"></button>
-  <!-- Dropdown de seleção de idioma -->
-  <select id="langSelect">
-    <option value="pt">Português</option>
-    <option value="en">English</option>
-    <option value="es">Español</option>
-  </select>
   <div class="cards" id="cards"></div>
 </div>
 
@@ -50,6 +44,7 @@ const translations = {
   es: { placeholder:"Deja un pulso en el mundo...", register:"Registrar", expires:"Expira en 24h" }
 };
 
+// Detecta idioma do navegador automaticamente
 let lang = navigator.language.startsWith("en") ? "en" :
            navigator.language.startsWith("es") ? "es" : "pt";
 
@@ -58,18 +53,6 @@ function setLanguage(){
   document.getElementById("registerBtn").textContent = translations[lang].register;
 }
 setLanguage();
-
-document.getElementById("langSelect").value = lang;
-document.getElementById("langSelect").addEventListener("change", e=>{
-  lang = e.target.value;
-  setLanguage();
-  renderCards(currentMessages);
-  markers.forEach(m=>{
-    const text = m.options.text;
-    const date = m.options.inserted_at;
-    m.bindPopup(`<strong>${text}</strong><br>${new Date(date).toLocaleString()}<br>${translations[lang].expires}`);
-  });
-});
 
 // ======================== MAPA ========================
 const map = L.map('map').setView([20,0],2);
@@ -89,7 +72,7 @@ updateTime(); setInterval(updateTime,1000);
 // ======================== SUPABASE ========================
 const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
-const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const pingAudio = document.getElementById("pingAudio");
 
 // ======================== VARIÁVEIS ========================
@@ -168,7 +151,7 @@ async function sendMessage(){
   navigator.geolocation.getCurrentPosition(async pos=>{
     const lat = pos.coords.latitude + (Math.random()-0.5)*0.02;
     const lng = pos.coords.longitude + (Math.random()-0.5)*0.02;
-    const {data,error} = await supabase.from('messages').insert([{text,latitude:lat,longitude:lng}]);
+    const {data,error} = await supabaseClient.from('messages').insert([{text,latitude:lat,longitude:lng}]);
     if(error) console.error(error);
   });
 }
@@ -176,7 +159,7 @@ document.getElementById("registerBtn").addEventListener("click", sendMessage);
 
 // ======================== BUSCA MENSAGENS ========================
 async function fetchMessages(){
-  const {data,error} = await supabase.from('messages').select('*').order('inserted_at',{ascending:false}).limit(100);
+  const {data,error} = await supabaseClient.from('messages').select('*').order('inserted_at',{ascending:false}).limit(100);
   if(error) return console.error(error);
 
   const now = Date.now();
@@ -195,7 +178,7 @@ async function fetchMessages(){
 fetchMessages();
 
 // ======================== SUPABASE REALTIME ========================
-supabase.channel('public:messages')
+supabaseClient.channel('public:messages')
 .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, payload=>{
   const m = payload.new;
   if(Date.now() - new Date(m.inserted_at).getTime() <= 24*60*60*1000){
