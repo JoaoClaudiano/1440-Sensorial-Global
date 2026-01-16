@@ -76,7 +76,8 @@ updateTime(); setInterval(updateTime,1000);
 // ======================== SUPABASE ========================
 const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
-const supabaseClient = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// CORREÇÃO: usar "supabase.createClient", não "Supabase.createClient"
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const pingAudio = document.getElementById("pingAudio");
 
 // ======================== VARIÁVEIS ========================
