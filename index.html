@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>1440 Sensorial Global</title>
 <meta name="description" content="Envie pulsos anônimos pelo mundo e veja mensagens em tempo real em um mapa interativo.">
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<!-- Manifest PWA embutido via data URI -->
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiMTQ0MCBTZW5zb3JpYWwgR2xvYmFsIiwic2hvcnRfbmFtZSI6IjE0NDAiLCJzdGFydF91cmwiOiIuL2luZGV4Lmh0bWwiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGYxMTE1IiwidGhlbWVfY29sb3IiOiIjMGYxMTE1IiwiaWNvbnMiOlt7InNyYyI6Imljb24tMTkyLnBuZyIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9wbmcifSx7InNyYyI6Imljb24tNTEyLnBuZyIsInNpemVzIjoiNTEyXDUxMiIsInR5cGUiOiJpbWFnZS9wbmcifV19">
+
 <style>
-/* ======= LAYOUT PRINCIPAL ======= */
 html, body { height:100%; margin:0; padding:0; font-family:Georgia, serif; background:#0f1115; color:#fff; }
-#map { width:100%; height:70vh; min-height:300px; } /* mapa sempre visível */
+#map { width:100%; height:70vh; min-height:300px; }
 .panel { width:100%; height:30vh; min-height:120px; padding:10px; background:rgba(15,17,21,0.85); display:flex; flex-direction:column; }
-/* RELÓGIO E INPUT */
 .time { text-align:center; font-size:2rem; margin-bottom:5px; }
 textarea { width:100%; background:transparent; border:1px solid #555; color:#eaeaea; padding:8px; resize:none; font-family:Georgia, serif; }
 button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #777; color:#eaeaea; cursor:pointer; font-family:Georgia, serif; }
@@ -28,10 +28,8 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
 </head>
 <body>
 
-<!-- MAPA -->
 <div id="map"></div>
 
-<!-- PAINEL INFERIOR -->
 <div class="panel">
   <div class="time" id="time">--:--</div>
   <textarea id="input"></textarea>
@@ -48,16 +46,14 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js" id="supabase-script"></script>
 
 <script>
-// ========== GARANTE SUPABASE CARREGADO ==========
 document.getElementById("supabase-script").onload = () => {
 
-  // ==================== SUPABASE ====================
   const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const pingAudio = document.getElementById("pingAudio");
 
-  // ==================== TRADUÇÃO AUTOMÁTICA ====================
+  // Tradução automática
   const translations = {
     pt: { placeholder:"Deixe um pulso no mundo...", register:"Registrar", expires:"Expira em 24h" },
     en: { placeholder:"Leave a pulse in the world...", register:"Register", expires:"Expires in 24h" },
@@ -68,14 +64,13 @@ document.getElementById("supabase-script").onload = () => {
   document.getElementById("input").placeholder = translations[lang].placeholder;
   document.getElementById("registerBtn").textContent = translations[lang].register;
 
-  // ==================== MAPA ====================
-  const map = L.map('map').setView([20,0],2); // visão inicial global
+  // Mapa
+  const map = L.map('map').setView([20,0],2);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'&copy; OpenStreetMap contributors',
-    maxZoom:19
+    attribution:'&copy; OpenStreetMap contributors', maxZoom:19
   }).addTo(map);
 
-  // ==================== RELÓGIO ====================
+  // Relógio
   const timeEl = document.getElementById("time");
   function updateTime(){ 
     const d = new Date(); 
@@ -83,13 +78,11 @@ document.getElementById("supabase-script").onload = () => {
   }
   updateTime(); setInterval(updateTime,1000);
 
-  // ==================== VARIÁVEIS ====================
   const cardsEl = document.getElementById("cards");
   const maxCards = 7;
   let markers = [];
   let currentMessages = [];
 
-  // ==================== FUNÇÃO DE COR DO PULSO ====================
   function getPulseColor(){
     const h = new Date().getHours();
     if(h<5) return "#4d79ff";
@@ -98,7 +91,6 @@ document.getElementById("supabase-script").onload = () => {
     return "#9933ff";
   }
 
-  // ==================== CRIAR PULSO ====================
   function createPulse(lat,lng,text,date){
     const color = getPulseColor();
     const marker = L.circleMarker([lat,lng],{
@@ -106,7 +98,6 @@ document.getElementById("supabase-script").onload = () => {
     }).addTo(map);
     marker.bindPopup(`<strong>${text}</strong><br>${new Date(date).toLocaleString()}<br>${translations[lang].expires}`);
 
-    // animação pulsante
     let r=10;
     const pulse = setInterval(()=>{
       r+=0.5;
@@ -118,7 +109,6 @@ document.getElementById("supabase-script").onload = () => {
     return marker;
   }
 
-  // ==================== CARDS ====================
   function renderCards(messages){
     cardsEl.innerHTML="";
     messages.slice(0,maxCards).forEach(m=>{
@@ -131,7 +121,6 @@ document.getElementById("supabase-script").onload = () => {
     });
   }
 
-  // ==================== ENVIAR MENSAGEM ====================
   async function sendMessage(){
     if(!navigator.geolocation) return alert("GPS não disponível");
     const text = document.getElementById("input").value.trim();
@@ -140,7 +129,7 @@ document.getElementById("supabase-script").onload = () => {
     pingAudio.currentTime=0; pingAudio.play();
 
     navigator.geolocation.getCurrentPosition(async pos=>{
-      const lat = pos.coords.latitude + (Math.random()-0.5)*0.02; // pequena variação para não sobrepor pontos
+      const lat = pos.coords.latitude + (Math.random()-0.5)*0.02;
       const lng = pos.coords.longitude + (Math.random()-0.5)*0.02;
       const {data,error} = await supabaseClient.from('messages').insert([{text,latitude:lat,longitude:lng}]);
       if(error) console.error(error);
@@ -148,7 +137,6 @@ document.getElementById("supabase-script").onload = () => {
   }
   document.getElementById("registerBtn").addEventListener("click", sendMessage);
 
-  // ==================== BUSCAR MENSAGENS EXISTENTES ====================
   async function fetchMessages(){
     const {data,error} = await supabaseClient.from('messages').select('*').order('inserted_at',{ascending:false}).limit(100);
     if(error) return console.error(error);
@@ -166,7 +154,7 @@ document.getElementById("supabase-script").onload = () => {
   }
   fetchMessages();
 
-  // ==================== SUPABASE REALTIME ====================
+  // Realtime Supabase
   supabaseClient.channel('public:messages')
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, payload=>{
       const m = payload.new;
@@ -177,12 +165,12 @@ document.getElementById("supabase-script").onload = () => {
       renderCards(currentMessages);
     }).subscribe();
 
-  // ==================== MUNDO EM SILÊNCIO ====================
+  // Mundo silencioso
   const silentMarker = L.circleMarker([0,0],{
     radius:8, fillColor:'#555', fillOpacity:0.2, stroke:false
   }).addTo(map);
 
-}; // fim onload supabase
+};
 </script>
 </body>
 </html>
