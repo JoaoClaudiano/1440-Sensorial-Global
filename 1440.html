@@ -23,15 +23,18 @@ body {
 #map { 
   flex:1; 
   width:100%; 
+  z-index:1;
 }
 .panel { 
-  height:30vh; 
-  min-height:120px; 
-  padding:10px; 
-  background:rgba(15,17,21,0.95); 
+  height:35vh; 
+  min-height:150px; 
+  padding:15px; 
+  background:rgba(15,17,21,0.97); 
   display:flex; 
   flex-direction:column;
   border-top:1px solid rgba(255,255,255,0.1);
+  z-index:2;
+  position:relative;
 }
 .time { 
   text-align:center; 
@@ -40,8 +43,35 @@ body {
   font-weight:300;
   letter-spacing:2px;
 }
+.stats-bar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+  padding:8px 12px;
+  background:rgba(255,255,255,0.05);
+  border-radius:6px;
+  font-size:0.85rem;
+}
+.stat-item {
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+.stat-icon {
+  font-size:1.2rem;
+}
+.stat-value {
+  font-weight:bold;
+  color:#4d79ff;
+}
+.input-container {
+  display:flex;
+  gap:10px;
+  margin-bottom:10px;
+}
 textarea { 
-  width:100%; 
+  flex:1;
   background:rgba(0,0,0,0.3); 
   border:1px solid #555; 
   color:#eaeaea; 
@@ -59,8 +89,7 @@ textarea:focus {
   box-shadow:0 0 0 2px rgba(77,121,255,0.2);
 }
 button { 
-  margin-top:10px; 
-  padding:10px 20px; 
+  padding:12px 24px; 
   background:linear-gradient(135deg, #4d79ff 0%, #9933ff 100%);
   border:none;
   color:#fff; 
@@ -70,6 +99,7 @@ button {
   border-radius:4px;
   transition:all 0.3s;
   font-weight:bold;
+  white-space:nowrap;
 }
 button:hover { 
   transform:translateY(-2px);
@@ -81,14 +111,84 @@ button:disabled {
   transform:none;
   box-shadow:none;
 }
-.cards { 
-  margin-top:10px; 
+.cards-container {
+  display:flex;
+  gap:10px;
+  height:100%;
+}
+#feed {
+  flex:2;
+  display:flex;
+  flex-direction:column;
+}
+#cards { 
+  flex:1;
   display:flex; 
   flex-direction:column; 
   gap:5px; 
-  max-height:100%; 
   overflow-y:auto;
+  padding-right:5px;
+}
+.realtime-feed {
   flex:1;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:6px;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.feed-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  margin-bottom:8px;
+}
+.feed-title {
+  font-size:0.9rem;
+  color:#4d79ff;
+  font-weight:bold;
+}
+.feed-badge {
+  background:#4d79ff;
+  color:white;
+  padding:2px 8px;
+  border-radius:10px;
+  font-size:0.7rem;
+}
+#realtimeMessages {
+  flex:1;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.realtime-message {
+  background:rgba(255,255,255,0.03);
+  border-left:3px solid #4d79ff;
+  padding:8px;
+  border-radius:3px;
+  font-size:0.8rem;
+  animation:fadeIn 0.3s ease-out;
+}
+.realtime-message.new {
+  background:rgba(77,121,255,0.1);
+  animation:pulse 1s ease;
+}
+.realtime-time {
+  font-size:0.7rem;
+  color:#aaa;
+  margin-bottom:3px;
+}
+.realtime-text {
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
 }
 .card { 
   background:rgba(255,255,255,0.05); 
@@ -109,9 +209,38 @@ button:disabled {
   font-size:0.9rem; 
   font-family:Georgia, serif; 
   max-width:250px;
+  padding:15px;
 }
 .leaflet-popup-content strong {
   color:#4d79ff;
+}
+.popup-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+  padding-bottom:8px;
+  border-bottom:1px solid #eee;
+}
+.popup-time {
+  font-size:0.8rem;
+  color:#666;
+}
+.popup-expiry {
+  font-size:0.7rem;
+  color:#ff6b6b;
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px solid #eee;
+}
+.popup-location {
+  font-size:0.8rem;
+  color:#666;
+  margin-top:5px;
+}
+.leaflet-popup-content-wrapper {
+  border-radius:8px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
 }
 
 /* Animações */
@@ -121,7 +250,7 @@ button:disabled {
 }
 @keyframes pulse {
   0% { transform:scale(1); }
-  50% { transform:scale(1.05); }
+  50% { transform:scale(1.02); }
   100% { transform:scale(1); }
 }
 @keyframes float {
@@ -130,14 +259,17 @@ button:disabled {
 }
 
 /* Scrollbar personalizada */
-.cards::-webkit-scrollbar {
+#cards::-webkit-scrollbar,
+#realtimeMessages::-webkit-scrollbar {
   width:6px;
 }
-.cards::-webkit-scrollbar-track {
+#cards::-webkit-scrollbar-track,
+#realtimeMessages::-webkit-scrollbar-track {
   background:rgba(255,255,255,0.1);
   border-radius:3px;
 }
-.cards::-webkit-scrollbar-thumb {
+#cards::-webkit-scrollbar-thumb,
+#realtimeMessages::-webkit-scrollbar-thumb {
   background:linear-gradient(135deg, #4d79ff 0%, #9933ff 100%);
   border-radius:3px;
 }
@@ -164,10 +296,36 @@ button:disabled {
 #languageToggle { top:10px; right:70px; }
 #themeToggle { top:10px; right:130px; }
 
+/* Indicador de usuários online */
+.online-users {
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:1000;
+  background:rgba(15,17,21,0.9);
+  border:1px solid rgba(77,121,255,0.5);
+  color:#4d79ff;
+  padding:6px 15px;
+  border-radius:20px;
+  font-size:0.8rem;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  backdrop-filter:blur(5px);
+}
+.online-dot {
+  width:8px;
+  height:8px;
+  background:#4dff4d;
+  border-radius:50%;
+  animation:pulse 2s infinite;
+}
+
 /* Aviso de segurança */
 .security-warning {
   position:absolute;
-  bottom:10px;
+  bottom:50px;
   left:10px;
   z-index:1000;
   background:rgba(255,50,50,0.2);
@@ -182,23 +340,27 @@ button:disabled {
 
 /* Responsividade */
 @media (max-height: 600px) {
-  .panel { height:40vh; }
+  .panel { height:45vh; }
   .time { font-size:1.5rem; }
   textarea { min-height:50px; padding:8px; }
+  .cards-container { flex-direction:column; }
 }
 @media (max-width: 768px) {
   .control-btn { padding:6px 10px; font-size:0.8rem; }
   #languageToggle { right:60px; }
   #themeToggle { right:110px; }
+  .cards-container { flex-direction:column; }
+  .input-container { flex-direction:column; }
+  button { width:100%; }
 }
 
-/* Tema claro (opcional) */
+/* Tema claro */
 body.light-theme {
   background:#f0f2f5;
   color:#333;
 }
 body.light-theme .panel {
-  background:rgba(240,242,245,0.95);
+  background:rgba(240,242,245,0.97);
   border-top:1px solid rgba(0,0,0,0.1);
 }
 body.light-theme textarea {
@@ -206,7 +368,8 @@ body.light-theme textarea {
   border:1px solid #ccc;
   color:#333;
 }
-body.light-theme .card {
+body.light-theme .card,
+body.light-theme .realtime-message {
   background:rgba(255,255,255,0.7);
   border:1px solid rgba(0,0,0,0.1);
   color:#333;
@@ -216,6 +379,13 @@ body.light-theme .control-btn {
   color:#333;
   border:1px solid rgba(0,0,0,0.1);
 }
+body.light-theme .online-users {
+  background:rgba(255,255,255,0.9);
+  color:#4d79ff;
+}
+body.light-theme .stats-bar {
+  background:rgba(0,0,0,0.05);
+}
 </style>
 </head>
 <body>
@@ -224,13 +394,45 @@ body.light-theme .control-btn {
 
 <div class="panel">
   <div class="time" id="time">--:--</div>
-  <textarea id="input" maxlength="200"></textarea>
-  <button id="registerBtn"></button>
-  <div class="cards" id="cards"></div>
+  
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-icon">🌍</span>
+      <span>Pulsos: <span class="stat-value" id="activePulses">0</span></span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">⏳</span>
+      <span>Expira em: <span class="stat-value" id="nextExpiry">24h</span></span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">📈</span>
+      <span>Hoje: <span class="stat-value" id="todayPulses">0</span></span>
+    </div>
+  </div>
+  
+  <div class="input-container">
+    <textarea id="input" maxlength="200"></textarea>
+    <button id="registerBtn"></button>
+  </div>
+  
+  <div class="cards-container">
+    <div id="feed">
+      <div class="cards" id="cards"></div>
+    </div>
+    
+    <div class="realtime-feed">
+      <div class="feed-header">
+        <div class="feed-title">🔄 Feed em Tempo Real</div>
+        <div class="feed-badge" id="realtimeCount">0</div>
+      </div>
+      <div id="realtimeMessages"></div>
+    </div>
+  </div>
 </div>
 
 <!-- Áudios -->
 <audio id="pingAudio" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" preload="auto"></audio>
+<audio id="notificationAudio" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" preload="auto"></audio>
 <audio id="ambientAudio" loop preload="auto">
   <source src="https://assets.mixkit.co/music/preview/mixkit-deep-urban-623.mp3" type="audio/mpeg">
 </audio>
@@ -240,9 +442,15 @@ body.light-theme .control-btn {
 <button id="languageToggle" class="control-btn">🌐</button>
 <button id="themeToggle" class="control-btn">🌙</button>
 
-<!-- Aviso de segurança (para testes) -->
+<!-- Indicador de usuários online -->
+<div class="online-users">
+  <div class="online-dot"></div>
+  <span id="onlineCount">0</span> pessoas conectadas agora
+</div>
+
+<!-- Aviso de segurança -->
 <div class="security-warning">
-  ⚠️ MODO TESTE: Chaves expostas. Para produção, use backend.
+  ⚠️ MODO TESTE: Para produção, use backend com API própria.
 </div>
 
 <!-- LEAFLET -->
@@ -260,22 +468,25 @@ console.warn("Para produção, NUNCA faça isso. Crie um backend com API própri
 const CONFIG = {
   MAX_MARKERS: 50,
   MAX_CARDS: 7,
+  MAX_REALTIME_MESSAGES: 15,
   MAX_MESSAGE_LENGTH: 200,
-  PARTICLE_DISTANCE: 100000, // metros
-  CLEANUP_INTERVAL: 60000, // 1 minuto
-  PULSE_INTERVAL: 50, // ms
-  DEBOUNCE_TIME: 100 // ms
+  PARTICLE_DISTANCE: 100000,
+  CLEANUP_INTERVAL: 60000,
+  PULSE_INTERVAL: 50,
+  DEBOUNCE_TIME: 100,
+  EXPIRY_HOURS: 24,
+  ONLINE_TIMEOUT: 30000 // 30 segundos para considerar offline
 };
 
 // ======================== TRADUÇÕES ========================
 const translations = {
   pt: { 
     placeholder: "Deixe um pulso no mundo...",
-    register: "Registrar Pulso",
+    register: "Enviar Pulso",
     sending: "Enviando...",
     sent: "✓ Enviado!",
     error: "✗ Erro!",
-    expires: "Expira em 24h",
+    expires: "Expira em",
     placeholder1: "O que está sentindo agora?",
     placeholder2: "Compartilhe um pensamento...",
     placeholder3: "Deixe sua marca no mundo...",
@@ -284,15 +495,24 @@ const translations = {
     soundOn: "🔊",
     soundOff: "🔇",
     themeLight: "☀️",
-    themeDark: "🌙"
+    themeDark: "🌙",
+    online: "pessoas conectadas agora",
+    pulses: "Pulsos",
+    today: "Hoje",
+    realtimeFeed: "Feed em Tempo Real",
+    expiresIn: "Expira em",
+    hours: "h",
+    minutes: "min",
+    justNow: "agora mesmo",
+    secondsAgo: "seg atrás"
   },
   en: { 
     placeholder: "Leave a pulse in the world...",
-    register: "Register Pulse",
+    register: "Send Pulse",
     sending: "Sending...",
     sent: "✓ Sent!",
     error: "✗ Error!",
-    expires: "Expires in 24h",
+    expires: "Expires in",
     placeholder1: "What are you feeling now?",
     placeholder2: "Share a thought...",
     placeholder3: "Leave your mark on the world...",
@@ -301,15 +521,24 @@ const translations = {
     soundOn: "🔊",
     soundOff: "🔇",
     themeLight: "☀️",
-    themeDark: "🌙"
+    themeDark: "🌙",
+    online: "people online now",
+    pulses: "Pulses",
+    today: "Today",
+    realtimeFeed: "Realtime Feed",
+    expiresIn: "Expires in",
+    hours: "h",
+    minutes: "min",
+    justNow: "just now",
+    secondsAgo: "sec ago"
   },
   es: { 
     placeholder: "Deja un pulso en el mundo...",
-    register: "Registrar Pulso",
+    register: "Enviar Pulso",
     sending: "Enviando...",
     sent: "✓ ¡Enviado!",
     error: "✗ ¡Error!",
-    expires: "Expira en 24h",
+    expires: "Expira en",
     placeholder1: "¿Qué estás sintiendo ahora?",
     placeholder2: "Comparte un pensamiento...",
     placeholder3: "Deja tu marca en el mundo...",
@@ -318,7 +547,16 @@ const translations = {
     soundOn: "🔊",
     soundOff: "🔇",
     themeLight: "☀️",
-    themeDark: "🌙"
+    themeDark: "🌙",
+    online: "personas conectadas ahora",
+    pulses: "Pulsos",
+    today: "Hoy",
+    realtimeFeed: "Feed en Tiempo Real",
+    expiresIn: "Expira en",
+    hours: "h",
+    minutes: "min",
+    justNow: "ahora mismo",
+    secondsAgo: "seg atrás"
   }
 };
 
@@ -331,13 +569,17 @@ const STATE = {
   markers: [],
   particleLines: [],
   currentMessages: [],
+  realtimeMessages: [],
   existingIds: new Set(),
   isFirstLoad: true,
   typingPlaceholderIndex: 0,
   typingCharIndex: 0,
   isDeleting: false,
   particleTimeout: null,
-  cleanupInterval: null
+  cleanupInterval: null,
+  onlineUsers: new Set(),
+  userActivity: {},
+  todayStart: new Date().setHours(0,0,0,0)
 };
 
 // ======================== INICIALIZAÇÃO ========================
@@ -367,8 +609,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Configurar limpeza periódica
   STATE.cleanupInterval = setInterval(cleanupOldMarkers, CONFIG.CLEANUP_INTERVAL);
   
+  // Configurar atualização de estatísticas
+  setInterval(updateStats, 5000);
+  
+  // Configurar atualização de usuários online
+  setInterval(updateOnlineUsers, 10000);
+  
   // Configurar event listeners
   setupEventListeners();
+  
+  // Adicionar usuário atual à lista de online
+  const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+  STATE.onlineUsers.add(userId);
+  STATE.userActivity[userId] = Date.now();
+  updateOnlineUsers();
 });
 
 // ======================== FUNÇÕES DE IDIOMA ========================
@@ -378,6 +632,7 @@ function setLanguage() {
   document.getElementById("registerBtn").textContent = t.register;
   document.getElementById("themeToggle").textContent = STATE.isDarkTheme ? t.themeLight : t.themeDark;
   document.getElementById("soundToggle").textContent = STATE.isSoundOn ? t.soundOn : t.soundOff;
+  document.querySelector(".online-users").lastChild.textContent = " " + t.online;
 }
 
 function toggleLanguage() {
@@ -386,6 +641,7 @@ function toggleLanguage() {
   STATE.lang = langs[(currentIndex + 1) % langs.length];
   setLanguage();
   renderCards(STATE.currentMessages);
+  updateRealtimeFeed();
 }
 
 // ======================== EFEITO DE DIGITAÇÃO ========================
@@ -448,33 +704,60 @@ function initSupabase() {
   
   window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   
-  // Configurar realtime
+  // Configurar realtime para mensagens
   supabaseClient.channel('public:messages')
     .on('postgres_changes', { 
       event: 'INSERT', 
       schema: 'public', 
       table: 'messages' 
     }, payload => {
-      const m = payload.new;
-      if (STATE.existingIds.has(m.id)) return;
-      STATE.existingIds.add(m.id);
-      
-      if (Date.now() - new Date(m.inserted_at).getTime() <= 24 * 60 * 60 * 1000) {
-        const marker = createPulse(m.latitude, m.longitude, m.text, m.inserted_at);
-        m.marker = marker;
-        STATE.markers.push(marker);
-        STATE.currentMessages.unshift(m);
-        renderCards(STATE.currentMessages);
-        debounceDrawParticles();
-        
-        // Tocar som de notificação
-        if (STATE.isSoundOn) {
-          document.getElementById('pingAudio').currentTime = 0;
-          document.getElementById('pingAudio').play();
-        }
-      }
+      handleNewMessage(payload.new);
     })
     .subscribe();
+}
+
+// ======================== MANIPULAR NOVA MENSAGEM ========================
+function handleNewMessage(m) {
+  if (STATE.existingIds.has(m.id)) return;
+  STATE.existingIds.add(m.id);
+  
+  const now = Date.now();
+  const messageTime = new Date(m.inserted_at).getTime();
+  const expiresIn = CONFIG.EXPIRY_HOURS * 60 * 60 * 1000;
+  
+  if (now - messageTime <= expiresIn) {
+    // Adicionar ao feed em tempo real
+    addToRealtimeFeed(m);
+    
+    // Adicionar marcador no mapa
+    const marker = createPulse(m.latitude, m.longitude, m.text, m.inserted_at);
+    m.marker = marker;
+    STATE.markers.push(marker);
+    
+    // Adicionar à lista de mensagens atuais
+    STATE.currentMessages.unshift(m);
+    
+    // Atualizar cards
+    renderCards(STATE.currentMessages);
+    
+    // Atualizar partículas
+    debounceDrawParticles();
+    
+    // Atualizar estatísticas
+    updateStats();
+    
+    // Tocar som de notificação
+    if (STATE.isSoundOn) {
+      document.getElementById('notificationAudio').currentTime = 0;
+      document.getElementById('notificationAudio').play();
+    }
+    
+    // Atualizar usuários online (simulação)
+    const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+    STATE.onlineUsers.add(userId);
+    STATE.userActivity[userId] = Date.now();
+    updateOnlineUsers();
+  }
 }
 
 // ======================== COR DOS PULSOS ========================
@@ -486,13 +769,13 @@ function getPulseColor() {
   return "#9933ff";               // Noite
 }
 
-// ======================== CRIAR PULSO ========================
+// ======================== CRIAR PULSO (DOT) NO MAPA ========================
 function createPulse(lat, lng, text, date) {
   const color = getPulseColor();
   const marker = L.circleMarker([lat, lng], {
-    radius: 10,
+    radius: 12,
     fillColor: color,
-    fillOpacity: 0.8,
+    fillOpacity: 0.9,
     stroke: true,
     color: "#fff",
     weight: 2,
@@ -501,25 +784,47 @@ function createPulse(lat, lng, text, date) {
   }).addTo(window.map);
   
   const t = translations[STATE.lang];
-  marker.bindPopup(`
-    <div style="max-width:250px;">
-      <strong style="color:${color}">"${text}"</strong><br>
-      <small>${new Date(date).toLocaleString()}</small><br>
-      <small><em>${t.expires}</em></small>
+  const expiryTime = new Date(new Date(date).getTime() + (CONFIG.EXPIRY_HOURS * 60 * 60 * 1000));
+  const timeDiff = expiryTime - Date.now();
+  const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
+  const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  // Criar popup/balaõ informativo
+  const popupContent = `
+    <div class="popup-header">
+      <strong style="color:${color}">📌 Pulso Sensorial</strong>
+      <span class="popup-time">${new Date(date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
     </div>
-  `);
+    <div style="margin:10px 0; padding:10px; background:rgba(0,0,0,0.05); border-radius:5px;">
+      <em>"${text}"</em>
+    </div>
+    <div class="popup-location">
+      📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}
+    </div>
+    <div class="popup-expiry">
+      ⏳ ${t.expiresIn} ${hoursLeft}${t.hours} ${minutesLeft}${t.minutes}
+    </div>
+  `;
+  
+  marker.bindPopup(popupContent);
   
   // Animação de pulso
-  let r = 10;
+  let r = 12;
   const pulseInterval = setInterval(() => {
     r += 0.5;
     marker.setRadius(r);
-    marker.setStyle({ fillOpacity: Math.max(0, 0.8 - (r - 10) / 20) });
-    if (r >= 30) r = 10;
+    marker.setStyle({ fillOpacity: Math.max(0, 0.9 - (r - 12) / 25) });
+    if (r >= 30) r = 12;
   }, CONFIG.PULSE_INTERVAL);
   
-  // Armazenar intervalo para limpeza posterior
   marker.pulseInterval = pulseInterval;
+  
+  // Evento de clique para abrir popup
+  marker.on('click', function() {
+    this.openPopup();
+    // Centralizar no marcador
+    window.map.setView(this.getLatLng(), Math.max(8, window.map.getZoom()));
+  });
   
   return marker;
 }
@@ -537,27 +842,110 @@ function renderCards(messages) {
     
     // Formatar texto (truncar se muito longo)
     let text = m.text;
-    if (text.length > 60) {
-      text = text.substring(0, 57) + "...";
+    if (text.length > 50) {
+      text = text.substring(0, 47) + "...";
     }
     
+    // Calcular tempo restante
+    const expiryTime = new Date(date.getTime() + (CONFIG.EXPIRY_HOURS * 60 * 60 * 1000));
+    const timeDiff = expiryTime - Date.now();
+    const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    
     div.innerHTML = `
-      <div style="display:flex; justify-content:space-between;">
-        <strong style="color:#4d79ff">${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}</strong>
-        <small>${date.toLocaleDateString()}</small>
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <div>
+          <strong style="color:#4d79ff">${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}</strong>
+          <div style="font-size:0.8rem; margin-top:3px;">"${text}"</div>
+        </div>
+        <div style="font-size:0.7rem; color:#aaa; text-align:right;">
+          ${hoursLeft}${t.hours}<br>${minutesLeft}${t.minutes}
+        </div>
       </div>
-      <div style="margin-top:5px;">"${text}"</div>
     `;
     
     div.onclick = () => {
       if (m.marker) {
         m.marker.openPopup();
-        window.map.setView(m.marker.getLatLng(), 8);
+        window.map.setView(m.marker.getLatLng(), Math.max(8, window.map.getZoom()));
       }
     };
     
     cardsEl.appendChild(div);
   });
+}
+
+// ======================== FEED EM TEMPO REAL ========================
+function addToRealtimeFeed(message) {
+  const t = translations[STATE.lang];
+  const now = Date.now();
+  const messageTime = new Date(message.inserted_at).getTime();
+  const secondsAgo = Math.floor((now - messageTime) / 1000);
+  
+  let timeText;
+  if (secondsAgo < 10) {
+    timeText = t.justNow;
+  } else if (secondsAgo < 60) {
+    timeText = `${secondsAgo} ${t.secondsAgo}`;
+  } else {
+    const minutesAgo = Math.floor(secondsAgo / 60);
+    timeText = `${minutesAgo} ${t.minutes}`;
+  }
+  
+  const feedItem = document.createElement("div");
+  feedItem.className = "realtime-message new";
+  feedItem.innerHTML = `
+    <div class="realtime-time">${timeText} • 🌍</div>
+    <div class="realtime-text">${message.text}</div>
+  `;
+  
+  const realtimeEl = document.getElementById("realtimeMessages");
+  STATE.realtimeMessages.unshift({element: feedItem, timestamp: now});
+  
+  // Limitar número de mensagens no feed
+  if (STATE.realtimeMessages.length > CONFIG.MAX_REALTIME_MESSAGES) {
+    const removed = STATE.realtimeMessages.pop();
+    if (removed.element.parentNode === realtimeEl) {
+      realtimeEl.removeChild(removed.element);
+    }
+  }
+  
+  // Adicionar ao DOM
+  realtimeEl.insertBefore(feedItem, realtimeEl.firstChild);
+  
+  // Atualizar contador
+  document.getElementById("realtimeCount").textContent = STATE.realtimeMessages.length;
+  
+  // Remover classe "new" após animação
+  setTimeout(() => {
+    feedItem.classList.remove("new");
+  }, 1000);
+}
+
+function updateRealtimeFeed() {
+  const t = translations[STATE.lang];
+  const now = Date.now();
+  
+  STATE.realtimeMessages.forEach(item => {
+    const secondsAgo = Math.floor((now - item.timestamp) / 1000);
+    let timeText;
+    
+    if (secondsAgo < 10) {
+      timeText = t.justNow;
+    } else if (secondsAgo < 60) {
+      timeText = `${secondsAgo} ${t.secondsAgo}`;
+    } else {
+      const minutesAgo = Math.floor(secondsAgo / 60);
+      timeText = `${minutesAgo} ${t.minutes}`;
+    }
+    
+    const timeEl = item.element.querySelector('.realtime-time');
+    if (timeEl) {
+      timeEl.innerHTML = `${timeText} • 🌍`;
+    }
+  });
+  
+  document.getElementById("realtimeCount").textContent = STATE.realtimeMessages.length;
 }
 
 // ======================== PARTÍCULAS ========================
@@ -579,7 +967,8 @@ function drawParticles() {
         const line = L.polyline([m1, m2], {
           color: color,
           weight: 1,
-          dashArray: '5, 5'
+          dashArray: '5, 5',
+          opacity: 0.3
         }).addTo(window.map);
         STATE.particleLines.push(line);
       }
@@ -650,6 +1039,10 @@ async function sendMessage() {
     document.getElementById('pingAudio').currentTime = 0;
     document.getElementById('pingAudio').play();
     
+    // Atualizar atividade do usuário
+    const userId = Array.from(STATE.onlineUsers)[0] || 'user_' + Math.random().toString(36).substr(2, 9);
+    STATE.userActivity[userId] = Date.now();
+    
     // Restaurar botão após 2 segundos
     setTimeout(() => {
       btn.textContent = originalText;
@@ -690,12 +1083,17 @@ async function fetchMessages() {
     STATE.markers = [];
     
     data.forEach(m => {
-      if (now - new Date(m.inserted_at).getTime() <= 24 * 60 * 60 * 1000) {
+      if (now - new Date(m.inserted_at).getTime() <= CONFIG.EXPIRY_HOURS * 60 * 60 * 1000) {
         STATE.existingIds.add(m.id);
         const marker = createPulse(m.latitude, m.longitude, m.text, m.inserted_at);
         m.marker = marker;
         STATE.currentMessages.push(m);
         STATE.markers.push(marker);
+        
+        // Adicionar ao feed em tempo real (apenas mensagens recentes - últimos 5 minutos)
+        if (now - new Date(m.inserted_at).getTime() <= 5 * 60 * 1000) {
+          addToRealtimeFeed(m);
+        }
       }
     });
     
@@ -708,27 +1106,88 @@ async function fetchMessages() {
     
     debounceDrawParticles();
     renderCards(STATE.currentMessages);
+    updateStats();
     
   } catch (error) {
     console.error("Erro ao buscar mensagens:", error);
   }
 }
 
+// ======================== ESTATÍSTICAS ========================
+function updateStats() {
+  const t = translations[STATE.lang];
+  const now = Date.now();
+  
+  // Contar pulsos ativos
+  const activePulses = STATE.markers.length;
+  document.getElementById('activePulses').textContent = activePulses;
+  
+  // Contar pulsos de hoje
+  const todayPulses = STATE.currentMessages.filter(m => 
+    new Date(m.inserted_at).getTime() >= STATE.todayStart
+  ).length;
+  document.getElementById('todayPulses').textContent = todayPulses;
+  
+  // Calcular próximo vencimento
+  let nextExpiry = CONFIG.EXPIRY_HOURS * 60;
+  STATE.currentMessages.forEach(m => {
+    const expiryTime = new Date(new Date(m.inserted_at).getTime() + (CONFIG.EXPIRY_HOURS * 60 * 60 * 1000));
+    const minutesLeft = Math.floor((expiryTime - now) / (1000 * 60));
+    if (minutesLeft < nextExpiry && minutesLeft > 0) {
+      nextExpiry = minutesLeft;
+    }
+  });
+  
+  if (nextExpiry < 60) {
+    document.getElementById('nextExpiry').textContent = `${nextExpiry}${t.minutes}`;
+  } else {
+    const hours = Math.floor(nextExpiry / 60);
+    const minutes = nextExpiry % 60;
+    document.getElementById('nextExpiry').textContent = `${hours}${t.hours} ${minutes}${t.minutes}`;
+  }
+  
+  // Atualizar feed em tempo real
+  updateRealtimeFeed();
+}
+
+// ======================== USUÁRIOS ONLINE ========================
+function updateOnlineUsers() {
+  const now = Date.now();
+  
+  // Remover usuários inativos
+  Object.keys(STATE.userActivity).forEach(userId => {
+    if (now - STATE.userActivity[userId] > CONFIG.ONLINE_TIMEOUT) {
+      STATE.onlineUsers.delete(userId);
+      delete STATE.userActivity[userId];
+    }
+  });
+  
+  // Gerar número aleatório de usuários online (para simulação)
+  // Em produção, isso viria do backend
+  const baseCount = Math.max(STATE.onlineUsers.size, 1);
+  const randomFactor = Math.floor(Math.random() * 10) - 3;
+  const onlineCount = Math.max(1, baseCount + randomFactor);
+  
+  document.getElementById('onlineCount').textContent = onlineCount;
+}
+
 // ======================== LIMPEZA ========================
 function cleanupOldMarkers() {
   const now = Date.now();
   const markersToRemove = [];
+  const expiryTime = CONFIG.EXPIRY_HOURS * 60 * 60 * 1000;
   
   STATE.markers = STATE.markers.filter(marker => {
     const popupText = marker.getPopup()?.getContent();
     if (!popupText) return true;
     
     // Extrair data da mensagem
-    const match = popupText.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z)/);
-    if (!match) return true;
+    const dateMatch = popupText.match(/(\d{1,2}):(\d{2}) (AM|PM)/);
+    if (!dateMatch) return true;
     
-    const inserted = new Date(match[1]).getTime();
-    if (now - inserted > 24 * 60 * 60 * 1000) {
+    // Verificar tempo de vida
+    const inserted = marker.options.inserted_at ? new Date(marker.options.inserted_at).getTime() : 0;
+    if (now - inserted > expiryTime) {
       markersToRemove.push(marker);
       return false;
     }
@@ -741,13 +1200,14 @@ function cleanupOldMarkers() {
     window.map.removeLayer(marker);
   });
   
-  // Atualizar cards
+  // Atualizar lista de mensagens
   STATE.currentMessages = STATE.currentMessages.filter(m => {
     return markersToRemove.indexOf(m.marker) === -1;
   });
   
   renderCards(STATE.currentMessages);
   debounceDrawParticles();
+  updateStats();
 }
 
 // ======================== EVENT LISTENERS ========================
@@ -793,24 +1253,35 @@ function setupEventListeners() {
     debounceDrawParticles();
   });
   
+  // Atualizar atividade do usuário em interações
+  document.addEventListener('click', () => {
+    if (STATE.onlineUsers.size > 0) {
+      const userId = Array.from(STATE.onlineUsers)[0];
+      STATE.userActivity[userId] = Date.now();
+    }
+  });
+  
   // Permitir arrastar cards no mobile
   let startY;
   const cardsEl = document.getElementById("cards");
+  const realtimeEl = document.getElementById("realtimeMessages");
   
-  cardsEl.addEventListener('touchstart', (e) => {
-    startY = e.touches[0].clientY;
-  }, { passive: true });
-  
-  cardsEl.addEventListener('touchmove', (e) => {
-    if (!startY) return;
-    const y = e.touches[0].clientY;
-    const diff = startY - y;
+  [cardsEl, realtimeEl].forEach(el => {
+    el.addEventListener('touchstart', (e) => {
+      startY = e.touches[0].clientY;
+    }, { passive: true });
     
-    if (Math.abs(diff) > 10) {
-      cardsEl.scrollTop += diff;
-      startY = y;
-    }
-  }, { passive: true });
+    el.addEventListener('touchmove', (e) => {
+      if (!startY) return;
+      const y = e.touches[0].clientY;
+      const diff = startY - y;
+      
+      if (Math.abs(diff) > 10) {
+        el.scrollTop += diff;
+        startY = y;
+      }
+    }, { passive: true });
+  });
 }
 
 // ======================== EXPORTAR FUNÇÕES PARA DEBUG ========================
@@ -819,6 +1290,7 @@ window.debug = {
   getState: () => STATE,
   getMarkers: () => STATE.markers,
   getMessages: () => STATE.currentMessages,
+  getOnlineUsers: () => STATE.onlineUsers.size,
   clearParticles,
   drawParticles,
   fetchMessages,
