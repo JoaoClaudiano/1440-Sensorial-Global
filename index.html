@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1440 Sensorial Global</title>
-<meta name="description" content="Envie pulsos anônimos pelo mundo e veja mensagens em tempo real em um mapa interativo.">
+<title>1440 Sensorial Global - Teste</title>
+<meta name="description" content="Teste mínimo funcional: mapa + relógio + input.">
 
-<!-- Manifest PWA com ícones embutidos em base64 -->
-<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoiMTQ0MCBTZW5zb3JpYWwgR2xvYmFsIiwic2hvcnRfbmFtZSI6IjE0NDAiLCJzdGFydF91cmwiOiIuL2luZGV4Lmh0bWwiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGYxMTE1IiwidGhlbWVfY29sb3IiOiIjMGYxMTE1IiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2UvZ3BuO2Jhc2U2NCxpbWFnZV9iYXNlNjRfMTkyeC5wbmc=;Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9LHsic3JjIjoiZGF0YTppbWFnZS9ncG47YmFzZTY0LGltYWdlX2Jhc2U2NF81MTJ4NTEyLnBuZyI7Iiwic2l6ZXMiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0=">
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
 html, body { height:100%; margin:0; padding:0; font-family:Georgia, serif; background:#0f1115; color:#fff; }
@@ -19,7 +19,6 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
 .cards { margin-top:5px; display:flex; flex-direction:column; gap:3px; max-height:100%; overflow-y:auto; }
 .card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:5px; font-size:0.85rem; cursor:pointer; transition:0.2s; }
 .card:hover { background:rgba(255,255,255,0.15); }
-.leaflet-popup-content { color:#000; font-size:0.9rem; font-family:Georgia, serif; }
 @media(max-width:600px){
   .time { font-size:1.5rem; }
   button { font-size:0.9rem; }
@@ -32,44 +31,22 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
 
 <div class="panel">
   <div class="time" id="time">--:--</div>
-  <textarea id="input"></textarea>
-  <button id="registerBtn"></button>
+  <textarea id="input" placeholder="Digite algo..."></textarea>
+  <button id="sendBtn">Enviar</button>
   <div class="cards" id="cards"></div>
 </div>
 
-<audio id="pingAudio" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
-
-<!-- Leaflet -->
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-<!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
-
 <script>
-document.addEventListener("DOMContentLoaded", ()=>{
-  // ==================== SUPABASE ====================
-  const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const pingAudio = document.getElementById("pingAudio");
-
-  // ==================== TRADUÇÃO AUTOMÁTICA ====================
-  const translations = {
-    pt: { placeholder:"Deixe um pulso no mundo...", register:"Registrar", expires:"Expira em 24h" },
-    en: { placeholder:"Leave a pulse in the world...", register:"Register", expires:"Expires in 24h" },
-    es: { placeholder:"Deja un pulso en el mundo...", register:"Registrar", expires:"Expira en 24h" }
-  };
-  let lang = navigator.language.startsWith("en") ? "en" :
-             navigator.language.startsWith("es") ? "es" : "pt";
-  const inputEl = document.getElementById("input");
-  const registerBtn = document.getElementById("registerBtn");
-  inputEl.placeholder = translations[lang].placeholder;
-  registerBtn.textContent = translations[lang].register;
+document.addEventListener("DOMContentLoaded", () => {
 
   // ==================== MAPA ====================
-  const map = L.map('map').setView([20,0],2);
+  const map = L.map('map').setView([20,0],2); // centraliza no mundo
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'&copy; OpenStreetMap contributors', maxZoom:19
+    attribution:'&copy; OpenStreetMap contributors',
+    maxZoom:19
   }).addTo(map);
 
   // ==================== RELÓGIO ====================
@@ -78,106 +55,36 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const d = new Date(); 
     timeEl.textContent = String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0'); 
   }
-  updateTime(); setInterval(updateTime,1000);
+  updateTime();
+  setInterval(updateTime,1000);
 
+  // ==================== INTERAÇÃO DO INPUT ====================
+  const sendBtn = document.getElementById("sendBtn");
+  const inputEl = document.getElementById("input");
   const cardsEl = document.getElementById("cards");
-  const maxCards = 7;
-  let markers = [];
-  let currentMessages = [];
 
-  // ==================== FUNÇÃO DE COR DO PULSO ====================
-  function getPulseColor(){
-    const h = new Date().getHours();
-    if(h<5) return "#4d79ff";
-    if(h<12) return "#ffd966";
-    if(h<18) return "#ff9900";
-    return "#9933ff";
-  }
-
-  // ==================== CRIAR PULSO ====================
-  function createPulse(lat,lng,text,date){
-    const color = getPulseColor();
-    const marker = L.circleMarker([lat,lng],{
-      radius:10, fillColor:color, fillOpacity:0.8, stroke:true, color:"#fff", weight:1
-    }).addTo(map);
-    marker.bindPopup(`<strong>${text}</strong><br>${new Date(date).toLocaleString()}<br>${translations[lang].expires}`);
-
-    let r=10;
-    const pulse = setInterval(()=>{
-      r+=0.5;
-      marker.setRadius(r);
-      marker.setStyle({fillOpacity:Math.max(0,0.8-(r-10)/20)});
-      if(r>=30) r=10;
-    },50);
-
-    return marker;
-  }
-
-  // ==================== CARDS ====================
-  function renderCards(messages){
-    cardsEl.innerHTML="";
-    messages.slice(0,maxCards).forEach(m=>{
-      const div = document.createElement("div");
-      div.className="card";
-      const date = new Date(m.inserted_at);
-      div.innerHTML=`<strong>${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}</strong> - "${m.text}"`;
-      div.onclick = ()=>{ if(m.marker) m.marker.openPopup(); }
-      cardsEl.appendChild(div);
-    });
-  }
-
-  // ==================== ENVIAR MENSAGEM ====================
-  async function sendMessage(){
-    if(!navigator.geolocation) return alert("GPS não disponível");
+  sendBtn.addEventListener("click", () => {
     const text = inputEl.value.trim();
     if(!text) return;
     inputEl.value="";
-    pingAudio.currentTime=0; pingAudio.play();
+    
+    // Cria card localmente
+    const div = document.createElement("div");
+    div.className="card";
+    const now = new Date();
+    div.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} - ${text}`;
+    cardsEl.prepend(div);
 
-    navigator.geolocation.getCurrentPosition(async pos=>{
-      const lat = pos.coords.latitude + (Math.random()-0.5)*0.02;
-      const lng = pos.coords.longitude + (Math.random()-0.5)*0.02;
-      const {data,error} = await supabaseClient.from('messages').insert([{text,latitude:lat,longitude:lng}]);
-      if(error) console.error(error);
-    });
-  }
-  registerBtn.addEventListener("click", sendMessage);
-
-  // ==================== BUSCAR MENSAGENS EXISTENTES ====================
-  async function fetchMessages(){
-    const {data,error} = await supabaseClient.from('messages').select('*').order('inserted_at',{ascending:false}).limit(100);
-    if(error) return console.error(error);
-    const now = Date.now();
-    currentMessages=[];
-    data.forEach(m=>{
-      if(now - new Date(m.inserted_at).getTime() <= 24*60*60*1000){
-        const marker = createPulse(m.latitude,m.longitude,m.text,m.inserted_at);
-        m.marker = marker;
-        currentMessages.push(m);
-        markers.push(marker);
-      }
-    });
-    renderCards(currentMessages);
-  }
-  fetchMessages();
-
-  // ==================== SUPABASE REALTIME ====================
-  supabaseClient.channel('public:messages')
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, payload=>{
-      const m = payload.new;
-      const marker = createPulse(m.latitude,m.longitude,m.text,m.inserted_at);
-      m.marker = marker;
-      markers.push(marker);
-      currentMessages.unshift(m);
-      renderCards(currentMessages);
-    }).subscribe();
-
-  // ==================== MUNDO EM SILÊNCIO ====================
-  const silentMarker = L.circleMarker([0,0],{
-    radius:8, fillColor:'#555', fillOpacity:0.2, stroke:false
-  }).addTo(map);
+    // Cria marcador no mapa em posição aleatória (para teste)
+    const lat = (Math.random()-0.5)*140; // +/-70 graus
+    const lng = (Math.random()-0.5)*360; // +/-180 graus
+    L.circleMarker([lat,lng],{
+      radius:8, fillColor:'#4d79ff', fillOpacity:0.8, stroke:true, color:"#fff", weight:1
+    }).addTo(map).bindPopup(text).openPopup();
+  });
 
 });
 </script>
+
 </body>
 </html>
