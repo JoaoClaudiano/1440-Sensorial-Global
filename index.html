@@ -3,33 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1440 Sensorial Global - Pulsos do Mundo</title>
-<meta name="description" content="1440 Sensorial: envie pulsos anônimos pelo mundo e veja mensagens em tempo real em um mapa interativo. Experiência sensorial e colaborativa.">
-<meta name="robots" content="index, follow">
-<meta property="og:title" content="1440 Sensorial Global"/>
-<meta property="og:description" content="Envie pulsos anônimos pelo mundo e veja mensagens em tempo real em um mapa interativo."/>
-<meta property="og:type" content="website"/>
-<meta property="og:url" content="https://seu-site.com/"/>
-<meta property="og:image" content="https://seu-site.com/preview.png"/>
+<title>1440 Sensorial Global</title>
+<meta name="description" content="Envie pulsos anônimos pelo mundo e veja mensagens em tempo real em um mapa interativo.">
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <style>
-body {
-  margin:0;
-  font-family: Georgia, sans-serif;
-  background:#0f1115;
-  color:#eaeaea;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-}
-#map { height:70vh; width:100%; filter: grayscale(100%) brightness(0.85); }
-.panel { height:30vh; padding:15px; background:rgba(15,17,21,0.85); display:flex; flex-direction:column; }
-.time { text-align:center; font-size:2rem; margin-bottom:10px; }
-textarea { width:100%; background:transparent; border:1px solid #555; color:#eaeaea; padding:10px; resize:none; }
-button { margin-top:10px; padding:8px 18px; background:none; border:1px solid #777; color:#eaeaea; cursor:pointer; }
-.cards { margin-top:10px; display:flex; flex-direction:column; gap:5px; max-height:100%; overflow-y:auto; }
-.card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:8px; font-size:0.9rem; animation:fadeIn 0.5s; }
-@keyframes fadeIn { from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);} }
+html, body { height:100%; margin:0; padding:0; font-family:Arial,sans-serif; background:#0f1115; color:#fff; }
+body { display:flex; flex-direction:column; }
+#map { height:70%; width:100%; }
+.panel { height:30%; padding:10px; background:rgba(15,17,21,0.85); display:flex; flex-direction:column; }
+.time { text-align:center; font-size:2rem; margin-bottom:5px; }
+textarea { width:100%; background:transparent; border:1px solid #555; color:#eaeaea; padding:8px; resize:none; }
+button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #777; color:#eaeaea; cursor:pointer; }
+.cards { margin-top:5px; display:flex; flex-direction:column; gap:3px; max-height:100%; overflow-y:auto; }
+.card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:5px; font-size:0.85rem; cursor:pointer; transition:0.2s; }
+.card:hover { background:rgba(255,255,255,0.15); }
+.leaflet-popup-content { color:#000; font-size:0.9rem; }
 </style>
 </head>
 <body>
@@ -46,48 +34,51 @@ button { margin-top:10px; padding:8px 18px; background:none; border:1px solid #7
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 <script>
-// ================== CONFIGURAÇÃO SUPABASE ==================
+// ================== SUPABASE ==================
 const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
 const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-// ==========================================================
+// =============================================
 
-// Inicializa mapa
-const map = L.map('map',{zoomControl:true}).setView([20,0],2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '' }).addTo(map);
+// MAPA
+const map = L.map('map').setView([20,0],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{ attribution:'' }).addTo(map);
 
+// HORA
 const timeEl = document.getElementById("time");
+function updateTime(){ const d=new Date(); timeEl.textContent = String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0'); }
+updateTime(); setInterval(updateTime,1000);
+
+// FEED
 const cardsEl = document.getElementById("cards");
 const maxCards = 7;
+let markers = [];
 
-// Atualiza hora
-function updateTime(){
-  const d = new Date();
-  timeEl.textContent = String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0');
-}
-setInterval(updateTime,1000); updateTime();
-
-// Cor do pulso por horário
+// Cor do pulso por hora
 function getPulseColor(){
   const h = new Date().getHours();
-  if(h>=0 && h<5) return "#4d79ff";
-  if(h>=5 && h<12) return "#ffd966";
-  if(h>=12 && h<18) return "#ff9900";
+  if(h<5) return "#4d79ff";
+  if(h<12) return "#ffd966";
+  if(h<18) return "#ff9900";
   return "#9933ff";
 }
 
-// Cria pulso animado
-function createPulse(lat,lng){
+// Cria marcador pulsante
+function createPulse(lat,lng,text,date){
   const color = getPulseColor();
-  L.circleMarker([lat,lng],{radius:14, fillColor:color, fillOpacity:0.9, stroke:true, color:"#fff", weight:1}).addTo(map);
-  let r=50;
-  const wave=L.circle([lat,lng],{radius:r,color:color,opacity:0.6,fill:false}).addTo(map);
-  const anim=setInterval(()=>{
-    r+=200;
-    wave.setRadius(r);
-    wave.setStyle({opacity:Math.max(0,wave.options.opacity-0.01)});
-    if(wave.options.opacity<=0){ map.removeLayer(wave); clearInterval(anim); }
+  const marker = L.circleMarker([lat,lng],{radius:10, fillColor:color, fillOpacity:0.8, stroke:true, color:"#fff", weight:1}).addTo(map);
+  marker.bindPopup(`<strong>${text}</strong><br>${new Date(date).toLocaleString()}<br>Expira em 24h`);
+  
+  // animação de pulso
+  let r = 10;
+  const pulse = setInterval(()=>{
+    r+=1;
+    marker.setRadius(r);
+    marker.setStyle({fillOpacity:Math.max(0,0.8-(r-10)/20)});
+    if(r>=30){ clearInterval(pulse); marker.setRadius(10); marker.setStyle({fillOpacity:0.8}); }
   },50);
+
+  return marker;
 }
 
 // Renderiza cards
@@ -97,7 +88,8 @@ function renderCards(messages){
     const div=document.createElement("div");
     div.className="card";
     const date=new Date(m.inserted_at);
-    div.innerHTML=`<strong>${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}</strong><br>"${m.text}"`;
+    div.innerHTML=`<strong>${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}</strong> - "${m.text}"`;
+    div.onclick = ()=>{ if(m.marker) m.marker.openPopup(); }
     cardsEl.appendChild(div);
   });
 }
@@ -105,40 +97,66 @@ function renderCards(messages){
 // Envia mensagem
 async function sendMessage(){
   if(!navigator.geolocation) return alert("GPS não disponível");
-  const text=document.getElementById("input").value.trim();
+  const text = document.getElementById("input").value.trim();
   if(!text) return;
+  document.getElementById("input").value="";
 
   navigator.geolocation.getCurrentPosition(async pos=>{
-    const lat=pos.coords.latitude + (Math.random()-0.5)*0.02;
-    const lng=pos.coords.longitude + (Math.random()-0.5)*0.02;
-
-    const {data,error}=await supabase.from('messages').insert([{text,latitude:lat,longitude:lng}]);
+    const lat = pos.coords.latitude + (Math.random()-0.5)*0.02;
+    const lng = pos.coords.longitude + (Math.random()-0.5)*0.02;
+    const {data,error} = await supabase.from('messages').insert([{text,latitude:lat,longitude:lng}]);
     if(error) return console.error(error);
-
-    document.getElementById("input").value="";
-    createPulse(lat,lng);
   });
 }
 
 // Busca mensagens recentes
 async function fetchMessages(){
-  const {data,error}=await supabase.from('messages').select('*').order('inserted_at',{ascending:false}).limit(50);
+  const {data,error} = await supabase.from('messages').select('*').order('inserted_at',{ascending:false}).limit(100);
   if(error) return console.error(error);
 
-  renderCards(data);
-  data.forEach(m=>createPulse(m.latitude,m.longitude));
+  const now = Date.now();
+  const active = [];
+  data.forEach(m=>{
+    const diff = now - new Date(m.inserted_at).getTime();
+    if(diff <= 24*60*60*1000){
+      const marker = createPulse(m.latitude,m.longitude,m.text,m.inserted_at);
+      m.marker = marker;
+      active.push(m);
+    }
+  });
+  markers = active.map(m=>m.marker);
+  renderCards(active);
 }
 
 // Realtime subscription
 supabase.channel('public:messages')
 .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, payload=>{
-  const m=payload.new;
-  renderCards([m,...Array.from(cardsEl.children).map(c=>({text:c.innerText,inserted_at:new Date().toISOString()}))].slice(0,maxCards));
-  createPulse(m.latitude,m.longitude);
+  const m = payload.new;
+  const now = Date.now();
+  const diff = now - new Date(m.inserted_at).getTime();
+  if(diff <= 24*60*60*1000){
+    const marker = createPulse(m.latitude,m.longitude,m.text,m.inserted_at);
+    m.marker = marker;
+    markers.push(marker);
+    renderCards([m,...Array.from(cardsEl.children).map(c=>({text:c.innerText,inserted_at:new Date()}))].slice(0,maxCards));
+  }
 })
 .subscribe();
 
-// Fetch inicial
+// Limpa mensagens expiradas a cada minuto
+setInterval(()=>{
+  const now = Date.now();
+  markers = markers.filter(marker=>{
+    const popupText = marker.getPopup()?.getContent();
+    if(!popupText) return true;
+    const match = popupText.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z)/);
+    if(!match) return true;
+    const inserted = new Date(match[1]).getTime();
+    if(now - inserted > 24*60*60*1000){ map.removeLayer(marker); return false; }
+    return true;
+  });
+},60*1000);
+
 fetchMessages();
 </script>
 
