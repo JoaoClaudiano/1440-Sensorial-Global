@@ -3,27 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1440 Sensorial Global - Teste</title>
-<meta name="description" content="Teste mínimo funcional: mapa + relógio + input.">
+<title>1440 Sensorial Global</title>
+<meta name="description" content="Mapa global sensorial com pulsos em tempo real.">
 
 <!-- Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
-<style>
-html, body { height:100%; margin:0; padding:0; font-family:Georgia, serif; background:#0f1115; color:#fff; }
-#map { width:100%; height:70vh; min-height:300px; }
-.panel { width:100%; height:30vh; min-height:120px; padding:10px; background:rgba(15,17,21,0.85); display:flex; flex-direction:column; }
-.time { text-align:center; font-size:2rem; margin-bottom:5px; }
-textarea { width:100%; background:transparent; border:1px solid #555; color:#eaeaea; padding:8px; resize:none; font-family:Georgia, serif; }
-button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #777; color:#eaeaea; cursor:pointer; font-family:Georgia, serif; }
-.cards { margin-top:5px; display:flex; flex-direction:column; gap:3px; max-height:100%; overflow-y:auto; }
-.card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:5px; font-size:0.85rem; cursor:pointer; transition:0.2s; }
-.card:hover { background:rgba(255,255,255,0.15); }
-@media(max-width:600px){
-  .time { font-size:1.5rem; }
-  button { font-size:0.9rem; }
-}
-</style>
+<!-- Estilo principal -->
+<link rel="stylesheet" href="css/style.css">
+
+<!-- Manifest PWA -->
+<link rel="manifest" href="manifest.json">
 </head>
 <body>
 
@@ -31,60 +21,21 @@ button { margin-top:5px; padding:6px 12px; background:none; border:1px solid #77
 
 <div class="panel">
   <div class="time" id="time">--:--</div>
-  <textarea id="input" placeholder="Digite algo..."></textarea>
+  <textarea id="input" placeholder="Digite um pulso..."></textarea>
   <button id="sendBtn">Enviar</button>
   <div class="cards" id="cards"></div>
 </div>
 
-<!-- Leaflet JS -->
+<audio id="pingAudio" src="assets/ping.mp3" preload="auto"></audio>
+
+<!-- Scripts -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-  // ==================== MAPA ====================
-  const map = L.map('map').setView([20,0],2); // centraliza no mundo
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    attribution:'&copy; OpenStreetMap contributors',
-    maxZoom:19
-  }).addTo(map);
-
-  // ==================== RELÓGIO ====================
-  const timeEl = document.getElementById("time");
-  function updateTime(){ 
-    const d = new Date(); 
-    timeEl.textContent = String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0'); 
-  }
-  updateTime();
-  setInterval(updateTime,1000);
-
-  // ==================== INTERAÇÃO DO INPUT ====================
-  const sendBtn = document.getElementById("sendBtn");
-  const inputEl = document.getElementById("input");
-  const cardsEl = document.getElementById("cards");
-
-  sendBtn.addEventListener("click", () => {
-    const text = inputEl.value.trim();
-    if(!text) return;
-    inputEl.value="";
-    
-    // Cria card localmente
-    const div = document.createElement("div");
-    div.className="card";
-    const now = new Date();
-    div.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} - ${text}`;
-    cardsEl.prepend(div);
-
-    // Cria marcador no mapa em posição aleatória (para teste)
-    const lat = (Math.random()-0.5)*140; // +/-70 graus
-    const lng = (Math.random()-0.5)*360; // +/-180 graus
-    L.circleMarker([lat,lng],{
-      radius:8, fillColor:'#4d79ff', fillOpacity:0.8, stroke:true, color:"#fff", weight:1
-    }).addTo(map).bindPopup(text).openPopup();
-  });
-
-});
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/map.js"></script>
+<script src="js/clock.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/main.js"></script>
 
 </body>
 </html>
