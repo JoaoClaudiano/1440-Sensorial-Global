@@ -37,8 +37,8 @@ button, select { margin-top:5px; padding:6px 12px; background:none; border:1px s
   <div class="cards" id="cards"></div>
 </div>
 
-<!-- Áudio local ping.mp3 (coloque na mesma pasta) -->
-<audio id="pingAudio" src="ping.mp3" preload="auto"></audio>
+<!-- Áudio ping público -->
+<audio id="pingAudio" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
@@ -73,8 +73,9 @@ document.getElementById("langSelect").addEventListener("change", e=>{
 
 // ======================== MAPA ========================
 const map = L.map('map').setView([20,0],2);
-L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',{
-  attribution:'&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>', maxZoom:20
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'&copy; OpenStreetMap contributors',
+  maxZoom:19
 }).addTo(map);
 
 // ======================== RELÓGIO ========================
@@ -88,7 +89,7 @@ updateTime(); setInterval(updateTime,1000);
 // ======================== SUPABASE ========================
 const SUPABASE_URL = 'https://eheyuoeagrfvqxgpmaex.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_1qg0L7fR4drbzru3sQmqtQ_eCTCZECn';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // corrigido
+const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const pingAudio = document.getElementById("pingAudio");
 
 // ======================== VARIÁVEIS ========================
